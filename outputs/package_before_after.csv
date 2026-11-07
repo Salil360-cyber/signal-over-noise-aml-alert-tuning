@@ -1,0 +1,3 @@
+scenario,alerts,true_pos,precision
+Current (5 rules),188883,1802,0.009540297432802316
+"Recommended (retire R5, R1 at 2)",158918,1772,0.011150404611183126

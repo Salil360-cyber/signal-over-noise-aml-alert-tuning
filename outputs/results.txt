@@ -1,0 +1,32 @@
+=== 1. DATA ===
+Transactions: 5,078,345 | laundering: 5,177 (0.10%)
+Data-quality finding: after 10 Sep only 1,108 transactions remain, 655 of them laundering -> window 1-10 Sep
+After removing self-transfers and the tail: 4,486,418 transactions, 4,514 laundering
+Account-days: 2,315,960 | suspicious: 7,130 (0.31%)
+
+=== 2. RULES (baseline) AND ONE-STEP THRESHOLD RAISE ===
+R1 Structuring: 3,235 alerts, 106 TP, precision 3.28% | raise 1->2: alerts -97.0%, TP kept 79.2%
+R2 Fan-out: 94,576 alerts, 585 TP, precision 0.62% | raise 4->5: alerts -47.2%, TP kept 71.8%
+R3 Fan-in: 62,120 alerts, 1,190 TP, precision 1.92% | raise 3->4: alerts -77.2%, TP kept 55.0%
+R4 Pass-through: 7,657 alerts, 132 TP, precision 1.72% | raise 10000->20000: alerts -40.0%, TP kept 26.5%
+R5 High-risk rails: 38,917 alerts, 94 TP, precision 0.24% | raise 2->3: alerts -59.6%, TP kept 35.1%
+All rules: 188,883 alerts, 1,802 TP, precision 0.95%, coverage 25.3% of suspicious account-days
+
+=== 3. RECOMMENDED PACKAGE: retire R5, raise R1 to 2 ===
+R1 at 2: 97 alerts, 84 TP
+Alerts 188,883 -> 158,918 (15.9% fewer) | TP 1,802 -> 1,772 (98.3% kept) | precision 0.95% -> 1.12%
+
+=== 4. ALERT RISK SCORING (train 1-7 Sep, test 8-10 Sep) ===
+Train 133,242 alerts (0.90% TP) | Test 55,641 alerts (1.09% TP)
+Logistic regression: PR-AUC 0.105 (random = 0.011) | TP in top 10%: 45.8% | top 30%: 66.8% | review 42.9% of alerts to find 80% of TP
+Gradient boosting: PR-AUC 0.143 (random = 0.011) | TP in top 10%: 54.9% | top 30%: 78.3% | review 32.3% of alerts to find 80% of TP
+
+=== 5. TYPOLOGY CHECK (pattern file, suspicious account-days in each typology) ===
+BIPARTITE: 473 account-days, 21.6% caught by at least one rule
+STACK: 825 account-days, 24.0% caught by at least one rule
+FAN-OUT: 403 account-days, 24.1% caught by at least one rule
+SCATTER-GATHER: 640 account-days, 24.5% caught by at least one rule
+FAN-IN: 357 account-days, 25.8% caught by at least one rule
+GATHER-SCATTER: 608 account-days, 26.6% caught by at least one rule
+RANDOM: 230 account-days, 28.7% caught by at least one rule
+CYCLE: 379 account-days, 29.3% caught by at least one rule

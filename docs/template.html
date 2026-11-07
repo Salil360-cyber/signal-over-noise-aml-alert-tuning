@@ -1,0 +1,338 @@
+<title>Signal Over Noise Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single analyst's worksheet column; each tool is a panel with controls left, result right, stacking on phones */
+:root {
+  --bg: #f3f5f8; --panel: #ffffff; --ink: #18202b; --muted: #5b6676; --line: #dde2ea; --soft: #eaeef4;
+  --accent: #2a78d6; --good: #138a60; --warn: #d25a26; --grey: #9aa1ab;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141b; --panel: #171e27; --ink: #e8edf3; --muted: #9aa6b5; --line: #2a3440; --soft: #202a35;
+  --accent: #5b9cf0; --good: #3cc08f; --warn: #f0814f; --grey: #6f7987; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f141b; --panel: #171e27; --ink: #e8edf3; --muted: #9aa6b5; --line: #2a3440; --soft: #202a35;
+  --accent: #5b9cf0; --good: #3cc08f; --warn: #f0814f; --grey: #6f7987; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 36px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; line-height: 1.05 }
+h2 { font-size: 21px; font-weight: 700 }
+p { margin: 0; max-width: 68ch }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.lede { color: var(--muted); font-size: 16.5px }
+header { display: grid; gap: 12px; padding-bottom: 6px }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 8px }
+.fact { background: var(--panel); padding: 14px 16px; display: grid; gap: 2px }
+.fact b { font: 600 22px/1.2 var(--mono); font-variant-numeric: tabular-nums }
+.fact span { font-size: 12.5px; color: var(--muted) }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px; display: grid; gap: 16px }
+.panel > .head { display: grid; gap: 6px }
+.panel > .head p { color: var(--muted) }
+.split { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 22px; align-items: start }
+@media (max-width: 760px) { .split { grid-template-columns: minmax(0, 1fr) } }
+.controls { display: grid; gap: 10px }
+.rule { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: var(--panel) }
+.rule:has(input:checked) { border-color: var(--accent); background: var(--soft) }
+.rule input { width: 17px; height: 17px; accent-color: var(--accent); margin: 0 }
+.rule .nm { font-weight: 600; font-size: 14px }
+.rule .pr { font: 500 12px var(--mono); color: var(--muted) }
+.rule .pr.bad { color: var(--warn) }
+.seg { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); padding-left: 39px; flex-wrap: wrap }
+.seg button { font: 500 12.5px var(--mono); border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  padding: 4px 10px; border-radius: 6px; cursor: pointer }
+.seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
+button:focus-visible, input:focus-visible, select:focus-visible, .rule:focus-within { outline: 2px solid var(--accent); outline-offset: 2px }
+.quick { display: flex; gap: 8px; flex-wrap: wrap }
+.quick button { font: 500 13px var(--body); padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line);
+  background: var(--soft); color: var(--ink); cursor: pointer }
+.quick button:hover { border-color: var(--accent) }
+.result { display: grid; gap: 14px; min-width: 0 }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px }
+.kpi { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 3px }
+.kpi .l { font-size: 12.5px; color: var(--muted) }
+.kpi .v { font: 600 24px/1.15 var(--mono); font-variant-numeric: tabular-nums }
+.kpi .d { font: 500 12.5px var(--mono); font-variant-numeric: tabular-nums }
+.up { color: var(--good) } .down { color: var(--warn) } .flat { color: var(--muted) }
+.verdict { font-size: 14.5px; padding: 11px 14px; border-radius: 8px; background: var(--soft); border-left: 3px solid var(--accent) }
+.verdict.bad { border-left-color: var(--warn) } .verdict.good { border-left-color: var(--good) }
+label.f { display: grid; gap: 6px; font-size: 13px; color: var(--muted) }
+select, input[type=range] { width: 100%; font: 500 14px var(--body); color: var(--ink) }
+select { padding: 8px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel) }
+input[type=range] { accent-color: var(--accent) }
+.thr { font: 600 26px var(--mono); color: var(--ink) }
+.chart { width: 100%; height: auto; display: block; overflow: visible }
+.chart text { fill: var(--muted); font: 11px var(--mono) }
+.chart .ax { stroke: var(--line) } .chart .grid { stroke: var(--soft) }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted) }
+.legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px }
+.bars { display: grid; gap: 8px }
+.bar { display: grid; grid-template-columns: 130px minmax(0, 1fr) 118px; gap: 10px; align-items: center; font-size: 13.5px }
+.bar .track { height: 14px; background: var(--soft); border-radius: 4px; overflow: hidden }
+.bar .fill { height: 100%; background: var(--accent); border-radius: 4px }
+.bar .n { font: 500 12.5px var(--mono); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums }
+@media (max-width: 480px) { .bar { grid-template-columns: 96px minmax(0, 1fr) 92px; font-size: 12px } }
+.note { font-size: 13px; color: var(--muted) }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; padding-top: 4px }
+a { color: var(--accent) }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">AML transaction monitoring · tuning study</div>
+    <h1>Signal Over Noise</h1>
+    <p class="lede">Five monitoring rules ran over 4.49 million synthetic bank transfers. Most alerts were noise. Use the tools below to see which rules earn their place, what a stricter threshold costs, and how far a risk score can shrink the review queue.</p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <section class="panel" aria-labelledby="pk-h">
+    <div class="head">
+      <div class="eyebrow">Tool 1</div>
+      <h2 id="pk-h">Build your own rule package</h2>
+      <p>Switch rules on or off and pick the structuring threshold. Counts are exact: they come from the combination of rules that fired on every alerted account-day.</p>
+    </div>
+    <div class="split">
+      <div class="controls" id="pk-controls"></div>
+      <div class="result">
+        <div class="kpis" id="pk-kpis"></div>
+        <div class="verdict" id="pk-verdict"></div>
+        <div class="quick">
+          <button type="button" data-preset="current">Current: all 5 rules</button>
+          <button type="button" data-preset="rec">Recommended: R5 off, R1 at 2</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="th-h">
+    <div class="head">
+      <div class="eyebrow">Tool 2</div>
+      <h2 id="th-h">Move one threshold</h2>
+      <p>Pick a rule and drag its threshold. The chart shows the trade-off across every tested value: fewer alerts, but fewer suspicious account-days caught.</p>
+    </div>
+    <div class="split">
+      <div class="controls">
+        <label class="f" for="th-rule">Rule
+          <select id="th-rule"></select></label>
+        <label class="f" for="th-slider"><span id="th-def"></span>
+          <span class="thr" id="th-val"></span>
+          <input type="range" id="th-slider" min="0" max="1" step="1" value="0"></label>
+      </div>
+      <div class="result">
+        <div class="kpis" id="th-kpis"></div>
+        <svg class="chart" id="th-chart" viewBox="0 0 600 244" role="img" aria-label="Alerts and true positives kept across thresholds"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Alerts left (% of baseline)</span><span><i style="background:var(--good)"></i>True positives kept (% of baseline)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="cc-h">
+    <div class="head">
+      <div class="eyebrow">Tool 3</div>
+      <h2 id="cc-h">Review the riskiest alerts first</h2>
+      <p>Two models trained on 1–7 Sep alerts score the unseen 8–10 Sep alerts (55,641 of them). Drag to choose how much of the queue analysts review, highest score first.</p>
+    </div>
+    <div class="split">
+      <div class="controls">
+        <label class="f" for="cc-slider">Share of alerts reviewed
+          <span class="thr" id="cc-val"></span>
+          <input type="range" id="cc-slider" min="1" max="100" step="1" value="30"></label>
+        <p class="note">Random order finds true positives in proportion to the work: review 30%, find about 30%.</p>
+      </div>
+      <div class="result">
+        <div class="kpis" id="cc-kpis"></div>
+        <svg class="chart" id="cc-chart" viewBox="0 0 600 272" role="img" aria-label="Capture curve"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Gradient boosting</span><span><i style="background:var(--good)"></i>Logistic regression</span><span><i style="background:var(--grey)"></i>Random order</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="ty-h">
+    <div class="head">
+      <div class="eyebrow">Coverage check</div>
+      <h2 id="ty-h">Which laundering patterns do the rules catch?</h2>
+      <p>The dataset ships a file of known laundering patterns. For each pattern, this is the share of its account-days that at least one rule alerted on.</p>
+    </div>
+    <div class="bars" id="ty-bars"></div>
+    <p class="note">No pattern is well covered. Overall the five rules alert on 25.3% of suspicious account-days, so the bigger gap is coverage, not just alert volume. The pattern file lists a subset of laundering transactions (3,209), so these shares are indicative.</p>
+  </section>
+
+  <footer>
+    <div>Data: IBM synthetic AML dataset HI-Small (Altman et al., NeurIPS 2023). All accounts and transfers are simulated. Window 1–10 Sep 2022 after removing a thin tail of mostly laundering rows. One alert = one account on one day.</div>
+    <div>Code, SQL and charts: <a href="https://github.com/Salil360-cyber/signal-over-noise-aml-alert-tuning" target="_blank" rel="noopener">github.com/Salil360-cyber/signal-over-noise-aml-alert-tuning</a> · Salil Gokhale</div>
+  </footer>
+</div>
+
+<script>
+const D = __DATA__;
+const TOTAL_SUSP = 7130, ACCT_DAYS = 2315960, BASE = TOTAL_SUSP / ACCT_DAYS;
+const fmt = n => Math.round(n).toLocaleString("en-US");
+const pct = (x, d = 1) => (x * 100).toFixed(d) + "%";
+const $ = id => document.getElementById(id);
+
+$("facts").innerHTML = [
+  ["4,486,418", "transfers analysed (1–10 Sep)"],
+  ["0.31%", "account-days truly suspicious"],
+  ["188,883", "alerts from the 5 rules"],
+  ["0.95%", "of alerts were truly suspicious"],
+].map(([b, s]) => `<div class="fact"><b>${b}</b><span>${s}</span></div>`).join("");
+
+/* ---------- Tool 1: package builder ---------- */
+const RULES = [
+  { k: "r1", name: "R1 Structuring", desc: "cash payments just under $10k" },
+  { k: "r2", name: "R2 Fan-out", desc: "pays many accounts in a day" },
+  { k: "r3", name: "R3 Fan-in", desc: "receives from many accounts" },
+  { k: "r4", name: "R4 Pass-through", desc: "money in, same amount out" },
+  { k: "r5", name: "R5 High-risk rails", desc: "repeated wire or bitcoin use" },
+];
+const sc = Object.fromEntries(D.scorecard.map(r => [r.rule, r]));
+const state = { r1: true, r2: true, r3: true, r4: true, r5: true, r1thr: 1 };
+
+$("pk-controls").innerHTML = RULES.map(r => {
+  const s = sc[r.name], bad = s.precision < BASE;
+  return `<label class="rule" for="pk-${r.k}"><input type="checkbox" id="pk-${r.k}" data-k="${r.k}">
+    <span><span class="nm">${r.name}</span><br><span class="note">${r.desc}</span></span>
+    <span class="pr ${bad ? "bad" : ""}" title="precision at baseline">${pct(s.precision, 2)}</span></label>` +
+    (r.k === "r1" ? `<div class="seg">Alert at
+      <button type="button" data-thr="1">1+ payment</button><button type="button" data-thr="2">2+ payments</button></div>` : "");
+}).join("") + `<p class="note">Right-hand figure = precision at the baseline threshold. Orange means worse than the 0.31% you would get by picking account-days at random.</p>`;
+
+function packageTotals(s) {
+  let a = 0, t = 0;
+  for (const c of D.combos) {
+    const hit = (s.r1 && (s.r1thr === 1 ? c.r1 : c.r1_2)) || (s.r2 && c.r2) || (s.r3 && c.r3) || (s.r4 && c.r4) || (s.r5 && c.r5);
+    if (hit) { a += c.alerts; t += c.true_pos; }
+  }
+  return { a, t, p: a ? t / a : 0 };
+}
+const CUR = packageTotals({ r1: 1, r2: 1, r3: 1, r4: 1, r5: 1, r1thr: 1 });
+
+function renderPackage() {
+  RULES.forEach(r => { $("pk-" + r.k).checked = state[r.k]; });
+  document.querySelectorAll("[data-thr]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.thr === state.r1thr)));
+  const n = packageTotals(state);
+  const da = n.a / CUR.a - 1, dt = n.t / CUR.t - 1;
+  const cls = x => Math.abs(x) < 0.0005 ? "flat" : (x > 0 ? "up" : "down");
+  const sign = x => (x > 0 ? "+" : "") + (x * 100).toFixed(1) + "%";
+  $("pk-kpis").innerHTML = `
+    <div class="kpi"><span class="l">Alerts to review</span><span class="v">${fmt(n.a)}</span>
+      <span class="d ${cls(-da)}">${sign(da)} vs current</span></div>
+    <div class="kpi"><span class="l">Suspicious account-days caught</span><span class="v">${fmt(n.t)}</span>
+      <span class="d ${cls(dt)}">${n.t && CUR.t ? pct(n.t / CUR.t) + " of current" : "–"}</span></div>
+    <div class="kpi"><span class="l">Precision</span><span class="v">${n.a ? pct(n.p, 2) : "–"}</span>
+      <span class="d flat">current ${pct(CUR.p, 2)}</span></div>
+    <div class="kpi"><span class="l">Coverage of all 7,130</span><span class="v">${pct(n.t / TOTAL_SUSP)}</span>
+      <span class="d flat">current ${pct(CUR.t / TOTAL_SUSP)}</span></div>`;
+  const v = $("pk-verdict");
+  if (!n.a) { v.className = "verdict bad"; v.textContent = "No rules are on, so nothing is monitored. Switch at least one rule back on."; return; }
+  const saved = CUR.a - n.a, lost = CUR.t - n.t;
+  if (saved > 0 && lost >= 0) {
+    const ratio = lost ? Math.round(saved / lost) : null;
+    v.className = "verdict " + (lost / CUR.t <= 0.02 ? "good" : "bad");
+    v.textContent = `You remove ${fmt(saved)} alerts and lose ${fmt(lost)} suspicious account-days` +
+      (ratio ? ` – about ${fmt(ratio)} alerts saved for every true positive given up.` : " – no true positives lost.");
+  } else if (saved === 0) { v.className = "verdict"; v.textContent = "This is the current set-up."; }
+  else { v.className = "verdict"; v.textContent = `This adds ${fmt(-saved)} alerts compared with the current set-up.`; }
+}
+$("pk-controls").addEventListener("change", e => { if (e.target.dataset.k) { state[e.target.dataset.k] = e.target.checked; renderPackage(); } });
+$("pk-controls").addEventListener("click", e => { const b = e.target.closest("[data-thr]"); if (b) { state.r1thr = +b.dataset.thr; renderPackage(); } });
+document.querySelectorAll("[data-preset]").forEach(b => b.addEventListener("click", () => {
+  Object.assign(state, { r1: true, r2: true, r3: true, r4: true, r5: b.dataset.preset !== "rec", r1thr: b.dataset.preset === "rec" ? 2 : 1 });
+  renderPackage();
+}));
+renderPackage();
+
+/* ---------- Tool 2: threshold explorer ---------- */
+const DEFS = {
+  "R1 Structuring": ["Cash payments of $9,000–9,999.99 in a day, at least", v => fmt(v)],
+  "R2 Fan-out": ["Different accounts paid in a day, at least", v => fmt(v)],
+  "R3 Fan-in": ["Different accounts received from in a day, at least", v => fmt(v)],
+  "R4 Pass-through": ["Money received in a day (USD), at least – with 80–120% sent out", v => "$" + fmt(v)],
+  "R5 High-risk rails": ["Wire or bitcoin payments in a day, at least", v => fmt(v)],
+};
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+$("th-rule").innerHTML = RULES.map(r => `<option>${r.name}</option>`).join("");
+
+function renderThreshold(resetSlider) {
+  const rule = $("th-rule").value, rows = D.grid.filter(g => g.rule === rule), base = sc[rule];
+  const s = $("th-slider");
+  if (resetSlider) { s.max = rows.length - 1; s.value = rows.findIndex(r => r.thr === base.threshold); }
+  const cur = rows[+s.value], [def, f] = DEFS[rule];
+  $("th-def").textContent = def;
+  $("th-val").textContent = f(cur.thr) + (cur.thr === base.threshold ? "  (baseline)" : "");
+  const p = cur.alerts ? cur.true_pos / cur.alerts : 0;
+  $("th-kpis").innerHTML = `
+    <div class="kpi"><span class="l">Alerts</span><span class="v">${fmt(cur.alerts)}</span><span class="d flat">${pct(cur.alerts / base.alerts)} of baseline</span></div>
+    <div class="kpi"><span class="l">True positives</span><span class="v">${fmt(cur.true_pos)}</span><span class="d flat">${pct(cur.true_pos / base.true_pos)} of baseline</span></div>
+    <div class="kpi"><span class="l">Precision</span><span class="v">${pct(p, 2)}</span><span class="d ${p < BASE ? "down" : "flat"}">${p < BASE ? "below" : "above"} 0.31% random</span></div>`;
+  // chart
+  const svg = $("th-chart"); svg.innerHTML = "";
+  const W = 600, H = 244, L = 44, R = 14, T = 12, B = 46, n = rows.length;
+  const xs = i => L + (n === 1 ? 0 : i * (W - L - R) / (n - 1)), y = v => T + (1 - v) * (H - T - B);
+  [0, .25, .5, .75, 1].forEach(v => { el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grid" }, svg); el("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = v * 100 + "%"; });
+  const bi = rows.findIndex(r => r.thr === base.threshold);
+  const ratio = (r, key) => Math.min(1.05, r[key] / base[key === "alerts" ? "alerts" : "true_pos"]);
+  const vis = rows.map((r, i) => ({ i, a: ratio(r, "alerts"), t: ratio(r, "true_pos") })).filter(d => d.i >= bi);
+  const path = key => vis.map((d, j) => (j ? "L" : "M") + xs(d.i).toFixed(1) + "," + y(d[key]).toFixed(1)).join("");
+  el("path", { d: path("a"), fill: "none", stroke: "var(--accent)", "stroke-width": 2.4 }, svg);
+  el("path", { d: path("t"), fill: "none", stroke: "var(--good)", "stroke-width": 2.4 }, svg);
+  const step = Math.max(1, Math.ceil(n / 8));
+  rows.forEach((r, i) => { if (i % step === 0 || i === n - 1) el("text", { x: xs(i), y: H - 28, "text-anchor": "middle" }, svg).textContent = r.thr >= 1000 ? (r.thr / 1000) + "k" : r.thr; });
+  const ci = +s.value;
+  el("line", { x1: xs(ci), x2: xs(ci), y1: T, y2: H - B, stroke: "var(--ink)", "stroke-dasharray": "3 3", "stroke-width": 1 }, svg);
+  if (ci >= bi) {
+    el("circle", { cx: xs(ci), cy: y(ratio(cur, "alerts")), r: 5, fill: "var(--accent)" }, svg);
+    el("circle", { cx: xs(ci), cy: y(ratio(cur, "true_pos")), r: 5, fill: "var(--good)" }, svg);
+  }
+  el("text", { x: (L + W - R) / 2, y: H, "text-anchor": "middle" }, svg).textContent = "threshold (lines start at the baseline)";
+}
+$("th-rule").addEventListener("change", () => renderThreshold(true));
+$("th-slider").addEventListener("input", () => renderThreshold(false));
+renderThreshold(true);
+
+/* ---------- Tool 3: capture curve ---------- */
+function renderCapture() {
+  const k = +$("cc-slider").value, row = D.capture[k];
+  $("cc-val").textContent = k + "%";
+  const gb = row["Gradient boosting"], lr = row["Logistic regression"];
+  $("cc-kpis").innerHTML = `
+    <div class="kpi"><span class="l">Gradient boosting finds</span><span class="v">${pct(gb, 0)}</span><span class="d flat">of true positives</span></div>
+    <div class="kpi"><span class="l">Logistic regression finds</span><span class="v">${pct(lr, 0)}</span><span class="d flat">of true positives</span></div>
+    <div class="kpi"><span class="l">Random order finds</span><span class="v">${k}%</span><span class="d flat">same as work done</span></div>`;
+  const svg = $("cc-chart"); svg.innerHTML = "";
+  const W = 600, H = 272, L = 44, R = 14, T = 10, B = 46;
+  const x = v => L + v * (W - L - R), y = v => T + (1 - v) * (H - T - B);
+  [0, .2, .4, .6, .8, 1].forEach(v => {
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grid" }, svg);
+    el("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = Math.round(v * 100) + "%";
+    el("text", { x: x(v), y: H - 28, "text-anchor": "middle" }, svg).textContent = Math.round(v * 100) + "%";
+  });
+  el("line", { x1: x(0), y1: y(0), x2: x(1), y2: y(1), stroke: "var(--grey)", "stroke-dasharray": "5 4", "stroke-width": 1.5 }, svg);
+  const line = (key, col) => el("path", { d: D.capture.map((r, i) => (i ? "L" : "M") + x(r.pct_reviewed).toFixed(1) + "," + y(r[key]).toFixed(1)).join(""), fill: "none", stroke: col, "stroke-width": 2.4 }, svg);
+  el("path", { d: "M" + x(0) + "," + y(0) + D.capture.filter(r => r.pct_reviewed <= k / 100).map(r => "L" + x(r.pct_reviewed).toFixed(1) + "," + y(r["Gradient boosting"]).toFixed(1)).join("") + "L" + x(k / 100) + "," + y(0) + "Z", fill: "var(--accent)", opacity: .12 }, svg);
+  line("Logistic regression", "var(--good)"); line("Gradient boosting", "var(--accent)");
+  el("line", { x1: x(k / 100), x2: x(k / 100), y1: T, y2: y(0), stroke: "var(--ink)", "stroke-dasharray": "3 3" }, svg);
+  el("circle", { cx: x(k / 100), cy: y(gb), r: 5, fill: "var(--accent)" }, svg);
+  el("circle", { cx: x(k / 100), cy: y(lr), r: 5, fill: "var(--good)" }, svg);
+  el("text", { x: (L + W - R) / 2, y: H, "text-anchor": "middle" }, svg).textContent = "alerts reviewed, highest score first";
+}
+$("cc-slider").addEventListener("input", renderCapture);
+renderCapture();
+
+/* ---------- Typology bars ---------- */
+$("ty-bars").innerHTML = D.typology.slice().sort((a, b) => b.caught - a.caught).map(t => `
+  <div class="bar"><span>${t.typology}</span><span class="track"><span class="fill" style="display:block;width:${(t.caught / 0.4 * 100).toFixed(1)}%"></span></span>
+  <span class="n">${pct(t.caught)} · ${t.alerted}/${t.account_days}</span></div>`).join("");
+</script>

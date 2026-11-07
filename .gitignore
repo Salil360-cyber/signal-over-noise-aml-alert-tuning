@@ -1,0 +1,6 @@
+# raw data is ~475 MB: download it (see README), don't commit it
+HI-Small_Trans.csv
+HI-Small_Patterns.txt
+*.csv.gz
+__pycache__/
+.ipynb_checkpoints/

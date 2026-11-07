@@ -1,0 +1,60 @@
+rule,thr,alerts,true_pos
+R1 Structuring,1,3235,106
+R1 Structuring,2,97,84
+R1 Structuring,3,64,57
+R1 Structuring,4,41,39
+R1 Structuring,5,25,24
+R2 Fan-out,2,414530,1791
+R2 Fan-out,3,189538,929
+R2 Fan-out,4,94576,585
+R2 Fan-out,5,49904,420
+R2 Fan-out,6,26511,317
+R2 Fan-out,7,14652,248
+R2 Fan-out,8,8401,199
+R2 Fan-out,9,4837,163
+R2 Fan-out,10,2820,143
+R2 Fan-out,11,1735,130
+R2 Fan-out,12,1094,122
+R2 Fan-out,13,723,120
+R2 Fan-out,14,520,119
+R2 Fan-out,15,369,117
+R3 Fan-in,2,497775,2724
+R3 Fan-in,3,62120,1190
+R3 Fan-in,4,14173,655
+R3 Fan-in,5,6759,469
+R3 Fan-in,6,4689,359
+R3 Fan-in,7,3666,292
+R3 Fan-in,8,3166,255
+R3 Fan-in,9,2811,231
+R3 Fan-in,10,2545,212
+R3 Fan-in,11,2298,199
+R3 Fan-in,12,2101,184
+R3 Fan-in,13,1933,169
+R3 Fan-in,14,1773,157
+R3 Fan-in,15,1628,143
+R4 Pass-through,5000,12549,179
+R4 Pass-through,10000,7657,132
+R4 Pass-through,15000,5997,87
+R4 Pass-through,20000,4593,35
+R4 Pass-through,25000,3843,23
+R4 Pass-through,30000,3310,20
+R4 Pass-through,35000,2832,17
+R4 Pass-through,40000,2534,15
+R4 Pass-through,45000,2349,14
+R4 Pass-through,50000,2232,14
+R4 Pass-through,55000,2121,14
+R4 Pass-through,60000,1995,14
+R4 Pass-through,65000,1885,14
+R4 Pass-through,70000,1810,14
+R4 Pass-through,75000,1701,13
+R4 Pass-through,80000,1610,10
+R4 Pass-through,85000,1541,10
+R4 Pass-through,90000,1478,10
+R4 Pass-through,95000,1429,10
+R4 Pass-through,100000,1373,9
+R5 High-risk rails,1,194050,499
+R5 High-risk rails,2,38917,94
+R5 High-risk rails,3,15706,33
+R5 High-risk rails,4,10062,18
+R5 High-risk rails,5,6174,14
+R5 High-risk rails,6,4146,13
